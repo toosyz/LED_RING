@@ -66,9 +66,6 @@
 // example for more information on possible values.
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-static int16_t currentLevel = 0;  // Current dim level...
-MyMessage lightMsg(0, V_LIGHT);
-
 int onoff=1;
 
 bool blinkingDown=true;
@@ -128,15 +125,12 @@ void setup()
 {
   Serial.begin(115200); 
   // Pull the gateway's current dim level - restore light level upon node power-up
-  request( 0, V_DIMMER );
   pixels.begin(); // This initializes the NeoPixel library.
 }
 
 void presentation()
 {
   // Register the LED Dimmable Light with the gateway
-  present(0, S_DIMMER);
-
   sendSketchInfo(SN, SV);
 }
 
@@ -180,13 +174,6 @@ void loop()
 
 void receive(const MyMessage &message)
 {
-  if (message.type == V_LIGHT) {
-    //  Retrieve the power or dim level from the incoming request message
-    onoff = atoi( message.data );
-    send(lightMsg.set(onoff > 0));
-  }
-  else 
-  {
     String s=message.getString();
     if(s.length()<4) {
       Serial.print("string length is 0");
@@ -214,15 +201,15 @@ void receive(const MyMessage &message)
       Color c(hexStringToInteger(s1), hexStringToInteger(s2), hexStringToInteger(s3));
       list[ledNumber]=c;
     }
-  }
 }
+
 int hexStringToInteger(String s)
 {
     int x=0;
     int len=s.length();
     for(int i=0; i<len; i++)
     {  
-      switch(s[i]){
+      switch(tolower(s[i])){
         case '1':
           x+=1*pow(16, len-i-1);
           break;
@@ -272,17 +259,4 @@ int hexStringToInteger(String s)
        }
     }
     return x;
-}
-
-
-void fadeToLevel( int toLevel )
-{
-
-  int delta = ( toLevel - currentLevel ) < 0 ? -1 : 1;
-
-  while ( currentLevel != toLevel ) {
-    currentLevel += delta;
-    analogWrite( LED_PIN, (int)(currentLevel / 100. * 255) );
-    delay( FADE_DELAY );
-  }
 }
